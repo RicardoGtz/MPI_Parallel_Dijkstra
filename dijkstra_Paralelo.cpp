@@ -37,11 +37,12 @@ int main(int argc, char *argv[]) {
 	MPI_Comm_rank(MPI_COMM_WORLD,&taskid);
 	MPI_Comm_size(MPI_COMM_WORLD,&numtasks);
 
-	char c[]="graphs/tamaulipas.txt";
+	char c[]="graphs/bcs.txt";
 	loadFile(c);
 	MPI_Barrier(MPI_COMM_WORLD);
 	splitWork();
-
+	//Comienza a medir el tiempo
+	double ti= MPI_Wtime();
 	if(taskid==MASTER){
  		//printGraph();
 		actNode=initNode;
@@ -98,22 +99,31 @@ int main(int argc, char *argv[]) {
 		MPI_Bcast(&totalVisited,1,MPI_INT,0,MPI_COMM_WORLD);
 
 	}
+	//Termina de medir el tiempo
+	double tf= MPI_Wtime();
 	if(taskid==MASTER){
-	//Añade los resultados del nodo maestro al resultados
-	for(int i=0;i<num;i++)
-		printf("[%d]%2.2f ",taskid,minDist[i]==DBL_MAX ? -1:minDist[i]);
+		//Imprime el arreglo de distancias minimas
+		printf("Distancias minimas [");
+		for(int i=0;i<num-1;i++)
+			printf("%.2f, ",minDist[i]==DBL_MAX ? -1:minDist[i]);
+		printf("%.2f]\n",minDist[num-1]==DBL_MAX ? -1:minDist[num-1]);
 
-	printf("\n");
+		//Imprim el arreglo de padres
+		printf("Padres [");
+		for(int i=0;i<num-1;i++)
+			printf("%d, ",parents[i]);
+		printf("%d]\n",parents[num-1]);
+
+		//Imprime el tiempo de ejecucion
+		printf("Tiempo de ejecucion: %f\n",(tf-ti) );
 	}
 
-	//printf ("tarea=%2d  Nodo actual %d minDist %f parents %d \n", taskid,actNode,minDist[actNode], parents[actNode]);
-
 	MPI_Barrier(MPI_COMM_WORLD);
+	free(graph);
+	free(minDist);
+	free(parents);
+	free(visited);
 	MPI_Finalize();
-	//free(graph);
-	//free(minDist);
-	//free(parents);
-	//free(visited);
   return 0;
 }
 void loadFile(char c[]){
